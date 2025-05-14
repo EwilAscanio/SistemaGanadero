@@ -1,9 +1,15 @@
 import HomePage from "@/components/HomePage";
+import Login from "./(pages)/login/page";
+import InicioSesion from "@/components/InicioSesion";
 
 const page = () => {
   return (
     <div>
-      <HomePage />
+      {/* <HomePage /> */}
+
+      {/* <Login/> */}
+
+      <InicioSesion/>
     </div>
   );
 };

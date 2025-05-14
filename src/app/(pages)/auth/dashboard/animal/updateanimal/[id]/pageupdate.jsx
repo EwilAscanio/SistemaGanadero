@@ -21,46 +21,45 @@ import {
 } from "react-icons/lu";
 import { FaExclamationCircle } from "react-icons/fa";
 import Swal from "sweetalert2";
-import { useState, useEffect, useCallback } from "react";
-import clsx from "clsx"; // Para manejar clases CSS condicionales
+import { useState, useEffect } from "react"; // Removimos useCallback
+import FechaNacimientoInput from "@/components/FechaNacimientoInput"; // Tu componente de fecha
 
-import FechaNacimientoInput from "@/components/FechaNacimientoInput";
+// --- Clases CSS simples (Fuera del componente) ---
 
-// --- Clases CSS comunes (Fuera del componente para no redefinir) ---
+const baseInputClasses =
+  "w-full pl-10 pr-3 py-2 border rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed";
+const errorBorderClass = "border-red-500";
+const normalBorderClass = "border-gray-300";
+const textGray400 = "text-gray-400"; // Para selects sin valor seleccionado
 
-const baseInputClass = `
-  w-full pl-10 pr-3 py-2 border rounded-lg text-sm
-  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-  text-gray-700
-  disabled:bg-gray-100 disabled:cursor-not-allowed
-`;
+// Helper para clases de inputs/selects basado en errores
+const getInputClasses = (
+  fieldName,
+  errors,
+  isSelect = false,
+  hasValue = true
+) => {
+  let classes = baseInputClasses;
+  classes += errors[fieldName]
+    ? ` ${errorBorderClass}`
+    : ` ${normalBorderClass}`;
+  if (isSelect) {
+    classes += " pr-10 appearance-none"; // Espacio para la flecha y remover flecha nativa
+    classes += hasValue ? " text-gray-700" : ` ${textGray400}`; // Color de texto para placeholder/valor
+  }
+  return classes;
+};
 
-const inputClass = (fieldName, errors) =>
-  clsx(baseInputClass, {
-    "border-red-500": errors[fieldName],
-    "border-gray-300": !errors[fieldName],
-  });
-
-const selectClass = (fieldName, errors, hasValue) =>
-  clsx(baseInputClass, "pr-10 appearance-none", {
-    "border-red-500": errors[fieldName],
-    "border-gray-300": !errors[fieldName],
-    "text-gray-400": !hasValue, // Estilo para placeholder (opción vacía)
-    "text-gray-700": hasValue, // Estilo cuando hay una opción seleccionada
-  });
-
-const errorClass = "flex items-center mt-1 text-red-600 text-xs";
-
+const errorTextClass = "flex items-center mt-1 text-red-600 text-xs";
+const RequiredAsterisk = () => <span className="text-red-500 ml-1">*</span>;
 
 // --- Helper para formatear fecha (Fuera del componente) ---
 const formatDateToYYYYMMDD = (dateString) => {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
-    // Verifica si la fecha es válida antes de formatear
     if (isNaN(date.getTime())) {
-      // console.error("Fecha inválida recibida:", dateString); // Útil para depuración
-      return "";
+      return ""; // Retorna vacío para fechas inválidas
     }
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -79,7 +78,7 @@ const UpdateAnimal = ({ params }) => {
   const [grupos, setGrupos] = useState([]);
   const [familyOptions, setFamilyOptions] = useState([]);
 
-  // Estado de carga inicial para el animal y los grupos
+  // Estados de carga y error para la carga inicial de datos
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [loadingError, setLoadingError] = useState(null);
 
@@ -93,23 +92,22 @@ const UpdateAnimal = ({ params }) => {
     setValue,
     watch,
     reset,
-    control, // Objeto control necesario para el componente FechaNacimientoInput con Controller
+    control, // Necesario para Controller
     clearErrors,
-  } = useForm({});
+  } = useForm();
 
-  // Watch para obtener los valores actuales del formulario y reaccionar a ellos
+  // Observar el valor del campo 'id_gru' para cargar las familias correspondientes
   const idGruWatched = watch("id_gru");
-  const sexoAniWatched = watch("sexo_ani");
+  const sexoAniWatched = watch("sexo_ani"); // Observar el sexo para campos condicionales
 
-  // UseEffect para cargar los datos del animal específico y los grupos al inicio.
-  // Se combinan para un solo estado de carga inicial.
+  // useEffect 1: Carga inicial del animal y los grupos
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoadingInitialData(true);
       setLoadingError(null);
 
       try {
-        // Usar Promise.all para cargar animal y grupos en paralelo
+        // Cargar animal y grupos en paralelo
         const [gruposRes, animalRes] = await Promise.all([
           axios.get(
             `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/grupoAnimales`
@@ -119,28 +117,28 @@ const UpdateAnimal = ({ params }) => {
           ),
         ]);
 
-        // Procesar respuesta de grupos
+        // Procesar grupos
         if (gruposRes.status === 200) {
           setGrupos(gruposRes.data);
         } else {
-          // Si no se cargan los grupos, puede que el selector de grupo esté vacío.
-          // Depende de si esto es un error bloqueante en tu app.
           console.warn("Error al cargar grupos:", gruposRes.status);
-          setGrupos([]); // Asegurar que siempre sea un array
+          setGrupos([]);
         }
 
-        // Procesar respuesta del animal
+        // Procesar datos del animal
         if (animalRes.status === 200) {
           const animalData = animalRes.data;
 
           // Formatear datos para el formulario
           const formattedData = {
             ...animalData,
-            codigo_fam: String(animalData.codigo_fam ?? ""), // Convertir a string
             codigo_ani: animalData.codigo_ani || "",
             nombre_ani: animalData.nombre_ani || "",
             chip_ani: animalData.chip_ani || "",
-            id_gru: animalData.id_gru || "", // Es crucial que este valor se establezca para disparar la carga de familias
+            id_gru: animalData.id_gru || "", // Si id_gru es 0 o null, usar ""
+            // *** CLAVE AQUÍ: Asegurarse de que codigo_fam sea STRING ***
+            // Si viene null o undefined, usar "", si viene un valor, convertirlo a string.
+            codigo_fam: String(animalData.codigo_fam || ""),
             sexo_ani: animalData.sexo_ani || "",
             fechaPalpacion_ani: formatDateToYYYYMMDD(
               animalData.fechaPalpacion_ani
@@ -154,154 +152,118 @@ const UpdateAnimal = ({ params }) => {
             fechaVacunacion_ani: formatDateToYYYYMMDD(
               animalData.fechaVacunacion_ani
             ),
-            status_ani: String(animalData.status_ani ?? 1), // Asegurar string y default a '1'
-            precio_ani: animalData.precio_ani ?? null, // Mantener null si viene null
+            // *** CLAVE AQUÍ: Asegurarse de que status_ani sea STRING para el select ***
+            status_ani: String(animalData.status_ani ?? 1),
+            precio_ani: animalData.precio_ani ?? null,
           };
 
-          // Prellenar el formulario con los datos cargados.
-          // Esto establecerá id_gru y codigo_fam en el formulario.
-          reset(formattedData);
+          // Log para verificar los datos formateados, especialmente id_gru y codigo_fam
+          console.log(
+            "Datos del animal formateados para reset:",
+            formattedData
+          );
 
-          // La carga de familias para el id_gru inicial se manejará automáticamente
-          // por el useEffect que observa idGruWatched.
+          // Prellenar el formulario con los datos cargados.
+          // Esto disparará el siguiente useEffect si id_gru cambia.
+          reset(formattedData);
         } else {
-          // Si no se carga el animal, esto sí es un error bloqueante para este formulario.
           setLoadingError(
             "No se pudieron obtener los datos del animal. Código: " +
               animalRes.status
           );
-          // No llamar reset si hay error en la carga del animal principal
         }
       } catch (error) {
         console.error("Error al cargar datos iniciales:", error);
-        // Capturar cualquier error de red o del servidor en Promise.all
         setLoadingError(
-          "No se pudieron cargar los datos iniciales (animal o grupos). Verifique la conexión o las APIs."
+          "No se pudieron cargar los datos iniciales. Verifique conexión o API."
         );
       } finally {
         setIsLoadingInitialData(false);
       }
     };
     loadInitialData();
-    // Las dependencias son params.id (para recargar si el ID cambia en la URL) y reset (estable de useForm).
+    // Dependencias: params.id (para recargar si el ID cambia en la URL) y reset (estable de useForm).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id, reset]);
 
-  // Función para cargar las familias de animales basado en el grupo seleccionado.
-  // Usamos useCallback para que la función sea estable y no cause re-renderizados
-  // innecesarios en el useEffect que la usa.
-  const cargarFamilias = useCallback(
-    async (grupoId) => {
-      // Solo cargar si hay un grupoId seleccionado
-      if (grupoId) {
-        setIsLoadingFamilias(true);
-        setFamilyOptions([]); // Limpiar opciones anteriores inmediatamente al empezar a cargar
+  // useEffect 2: Cargar las familias cuando el grupo seleccionado cambia
+  useEffect(() => {
+    // Solo cargar si hay un id de grupo válido
+    if (idGruWatched) {
+      setIsLoadingFamilias(true);
+      setFamilyOptions([]); // Limpiar opciones de familia del grupo anterior
+      // No limpiamos el valor de 'codigo_fam' aquí porque 'reset' ya lo estableció
+      // para la carga inicial. Si el usuario cambia el grupo manualmente,
+      // React Hook Form limpiará automáticamente el valor si la opción seleccionada ya no existe.
 
-        try {
-          const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/familia/${grupoId}`
-          );
+      axios
+        .get(
+          `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/familia/${idGruWatched}`
+        )
+        .then((response) => {
           if (response.status === 200) {
             const options = response.data.map((fam) => ({
-              value: String(fam.codigo_fam), // Asegurar que sea string
+              // *** SOLUCIÓN CLAVE: Convertir el código de familia a STRING ***
+              // Esto asegura que el valor de la opción coincida con el valor
+              // que 'reset' estableció para 'codigo_fam'.
+              value: String(fam.codigo_fam),
               label: fam.name_fam,
             }));
             setFamilyOptions(options);
+            // Log para verificar las familias cargadas y sus valores
+            console.log(
+              "Familias cargadas para grupo",
+              idGruWatched,
+              ":",
+              options
+            );
           } else {
             console.warn(
               "Error al cargar familias para grupo",
-              grupoId,
+              idGruWatched,
               ":",
               response.status
             );
             setFamilyOptions([]);
           }
-        } catch (error) {
+        })
+        .catch((error) => {
           console.error("Error al cargar familias:", error);
           setFamilyOptions([]);
-        } finally {
+        })
+        .finally(() => {
           setIsLoadingFamilias(false);
-        }
-      } else {
-        // Si no hay grupo seleccionado (ej. al inicio o si se deselecciona el grupo),
-        // limpiar las opciones y el valor de familia.
-        setFamilyOptions([]);
-        setValue("codigo_fam", "");
-        clearErrors("codigo_fam");
-      }
-    },
-    [setValue, clearErrors] // Dependencias de useCallback: funciones de useForm que podrían cambiar (aunque setValue/clearErrors son estables)
-  );
-
-  // UseEffect para reaccionar cuando el idGruWatched cambia (incluyendo el cambio inicial por 'reset')
-  // Este hook se encarga de llamar a cargarFamilias.
-  useEffect(() => {
-    cargarFamilias(idGruWatched);
-  }, [idGruWatched, cargarFamilias]); // Dependencia: el valor observado del grupo y la función cargarFamilias (estable por useCallback)
-
-  useEffect(() => {
-    const cargarFamilias = async (grupoId) => {
-      if (grupoId) {
-        setIsLoadingFamilias(true);
-        setFamilyOptions([]);
-
-        try {
-          const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/familia/${grupoId}`
-          );
-          if (response.status === 200) {
-            const options = response.data.map((fam) => ({
-              value: String(fam.codigo_fam), // Asegurar que sea string
-              label: fam.name_fam,
-            }));
-            setFamilyOptions(options);
-
-            // Forzar la actualización del valor del select si ya hay un valor inicial
-            const currentCodigoFam = watch("codigo_fam");
-            if (currentCodigoFam) {
-              const existsInOptions = options.some(
-                (option) => option.value === currentCodigoFam
-              );
-              if (existsInOptions) {
-                setValue("codigo_fam", currentCodigoFam);
-              }
-            }
-          } else {
-            setFamilyOptions([]);
-          }
-        } catch (error) {
-          console.error("Error al cargar familias:", error);
-          setFamilyOptions([]);
-        } finally {
-          setIsLoadingFamilias(false);
-        }
-      } else {
-        setFamilyOptions([]);
-        setValue("codigo_fam", ""); // Limpiar el valor si no hay grupo seleccionado
-        clearErrors("codigo_fam");
-      }
-    };
-
-    cargarFamilias(idGruWatched);
-  }, [idGruWatched, setValue, watch, clearErrors]);
+        });
+    } else {
+      // Si no hay grupo seleccionado (ej. al inicio o si se deselecciona)
+      setFamilyOptions([]);
+      // Opcional: Limpiar el campo familia si el grupo se deselecciona.
+      // Si reset estableció un valor, watch lo mantendrá hasta que cambie el grupo.
+      // Si el usuario deselecciona el grupo, esto limpiará el campo familia.
+      setValue("codigo_fam", "");
+      clearErrors("codigo_fam");
+    }
+  }, [idGruWatched, setValue, clearErrors]); // Dependencia: el valor observado del grupo
 
   // Función que se ejecuta al enviar el formulario si la validación es exitosa
   const onSubmit = handleSubmit(async (data) => {
-    Swal.close(); // Cerrar cualquier SweetAlert previo que pudiera estar abierto
+    Swal.close(); // Cerrar SweetAlerts anteriores
 
     try {
       // Preparar los datos para enviar a la API
       const dataToSend = {
         ...data,
-        // Convertir campos opcionales vacíos (string vacíos o NaN de valueAsNumber) a null si la API lo espera
+        // Convertir campos opcionales vacíos (string vacíos o NaN) a null si la API lo espera
         chip_ani: data.chip_ani || null,
         arete_ani: data.arete_ani || null,
         peso_ani: data.peso_ani || null,
         precio_ani: data.precio_ani || null,
-        // Asegurarse de que status_ani sea un número si la API lo requiere (viene como string del select)
+        // Asegurarse de que status_ani sea un número si la API lo requiere
         status_ani: parseInt(data.status_ani, 10),
+        // codigo_fam ya es string por el mapeo en cargarFamilias y reset.
+        // id_gru ya es string por reset.
 
-        // Campos condicionales: solo enviar si el sexo es 'Hembra' y el campo tiene valor
+        // Campos condicionales: solo enviar si es hembra y el campo tiene valor
         fechaPalpacion_ani:
           sexoAniWatched === "Hembra" && data.fechaPalpacion_ani
             ? data.fechaPalpacion_ani
@@ -314,45 +276,40 @@ const UpdateAnimal = ({ params }) => {
 
       console.log("Datos a enviar para actualizar:", dataToSend);
 
-      // Realizar la petición PUT a la API
       const res = await axios.put(
         `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/animal/${params.id}`,
         dataToSend
       );
 
-      // Manejar la respuesta de la API
+      // Manejar la respuesta de la API (códigos 2xx para éxito)
       if (res.status >= 200 && res.status < 300) {
-        // Éxito (códigos 2xx)
         Swal.fire({
           title: "Actualización Exitosa",
           text: "El animal ha sido actualizado exitosamente.",
           icon: "success",
           confirmButtonColor: "#3085d6",
-          showConfirmButton: true, // Asegurar que el botón OK se muestre
         }).then(() => {
-          router.push(`/auth/dashboard/animal`); // Redirigir al listado
-          router.refresh(); // Opcional: recargar datos en la página de destino si es necesario (Next.js 13+)
+          router.push(`/auth/dashboard/animal`); // Redirigir
+          router.refresh(); // Recargar datos en la página de destino
         });
       } else {
-        // Manejar otros códigos de estado que no sean 2xx
         console.error("Actualización no exitosa:", res.status, res.data);
         Swal.fire({
-          title: "Error en la respuesta del servidor",
-          text: `El servidor respondió con estado ${res.status}. Intente de nuevo.`,
+          title: "Error en la respuesta",
+          text: `El servidor respondió con estado ${res.status}.`,
           icon: "error",
           confirmButtonColor: "#d33",
         });
       }
     } catch (error) {
       console.error(
-        "Error en onSubmit (actualización):",
+        "Error al actualizar:",
         error.response?.data || error.message || error
       );
-      // Mostrar un error más amigable al usuario
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
-        "Ocurrió un error al intentar actualizar el animal.";
+        "Ocurrió un error al actualizar el animal.";
       Swal.fire({
         title: "Error",
         text: errorMessage,
@@ -362,9 +319,9 @@ const UpdateAnimal = ({ params }) => {
     }
   });
 
-  // --- Renderizado de Estados de Carga y Error Iniciales ---
+  // --- Renderizado de la Interfaz ---
 
-  // Mostrar un mensaje de error si la carga inicial falló
+  // Mostrar mensaje de error inicial si la carga falló
   if (loadingError) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -372,7 +329,7 @@ const UpdateAnimal = ({ params }) => {
           <p className="text-lg font-semibold mb-4">Error al cargar datos:</p>
           <p className="text-gray-700 mb-4">{loadingError}</p>
           <button
-            onClick={() => window.location.reload()} // Permite al usuario intentar recargar la página
+            onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
           >
             Intentar de nuevo
@@ -382,7 +339,7 @@ const UpdateAnimal = ({ params }) => {
     );
   }
 
-  // Mostrar un spinner mientras se cargan los datos iniciales (animal y grupos)
+  // Mostrar spinner mientras se cargan los datos iniciales (animal y grupos)
   if (isLoadingInitialData) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -396,10 +353,9 @@ const UpdateAnimal = ({ params }) => {
     );
   }
 
-  // --- Renderizado del Formulario (Una vez que los datos iniciales están cargados) ---
+  // Renderizar el formulario una vez que los datos iniciales estén listos
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      {/* Contenedor principal del formulario */}
+    <div className="flex items-center justify-center p-4 min-h-screen bg-gray-100">
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 max-w-4xl w-full">
         <div className="text-center mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
@@ -412,7 +368,7 @@ const UpdateAnimal = ({ params }) => {
 
         {/* Formulario */}
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* Campo CODIGO ANIMAL (Read Only) */}
             <div>
               <label
@@ -422,21 +378,18 @@ const UpdateAnimal = ({ params }) => {
                 Código Animal
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuHash
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Input (Read Only, no necesita required/validation rules si no se edita) */}
                 <input
                   id="codigo_ani"
                   type="text"
                   readOnly
-                  disabled={isSubmitting} // Deshabilitar si se está enviando el formulario
-                  className={inputClass("codigo_ani", errors)} // Usar la clase helper
-                  {...register("codigo_ani")} // Registrar el campo
+                  disabled={isSubmitting}
+                  className={getInputClasses("codigo_ani", errors)}
+                  {...register("codigo_ani")}
                 />
-                {/* No esperamos errores para un campo readOnly, pero la lógica de errorClass podría mantenerse */}
               </div>
             </div>
 
@@ -446,35 +399,26 @@ const UpdateAnimal = ({ params }) => {
                 htmlFor="nombre_ani"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Nombre 
+                Nombre <RequiredAsterisk />
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuBrush
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="nombre_ani"
                   type="text"
                   placeholder="Nombre Animal"
-                  className={inputClass("nombre_ani", errors)}
+                  className={getInputClasses("nombre_ani", errors)}
                   disabled={isSubmitting}
                   {...register("nombre_ani", {
-                    // Registrar y añadir reglas de validación
                     required: "El nombre del animal es requerido",
-                    minLength: {
-                      value: 2,
-                      message: "El nombre debe tener mínimo 2 caracteres",
-                    },
+                    minLength: { value: 2, message: "Mínimo 2 caracteres" },
                   })}
                 />
-                {/* Mostrar mensaje de error si existe */}
                 {errors.nombre_ani && (
-                  <p role="alert" className={errorClass}>
-                    {" "}
-                    {/* role="alert" para accesibilidad */}
+                  <p role="alert" className={errorTextClass}>
                     <FaExclamationCircle className="mr-1" />
                     {errors.nombre_ani.message}
                   </p>
@@ -488,21 +432,23 @@ const UpdateAnimal = ({ params }) => {
                 htmlFor="sexo_ani"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Sexo 
+                Sexo <RequiredAsterisk />
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuVenetianMask
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Select */}
                 <select
                   id="sexo_ani"
-                  className={selectClass("sexo_ani", errors, sexoAniWatched)}
+                  className={getInputClasses(
+                    "sexo_ani",
+                    errors,
+                    true,
+                    !!sexoAniWatched
+                  )} // Es select, pasar hasValue
                   disabled={isSubmitting}
                   {...register("sexo_ani", {
-                    // Registrar y añadir regla de validación
                     required: "Debe seleccionar el sexo",
                   })}
                 >
@@ -510,13 +456,11 @@ const UpdateAnimal = ({ params }) => {
                   <option value="Hembra">Hembra</option>
                   <option value="Macho">Macho</option>
                 </select>
-                {/* Flecha decorativa para el select */}
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none">
                   <LuArrowRight size={20} />
                 </div>
-                {/* Mostrar mensaje de error si existe */}
                 {errors.sexo_ani && (
-                  <p role="alert" className={errorClass}>
+                  <p role="alert" className={errorTextClass}>
                     <FaExclamationCircle className="mr-1" />
                     {errors.sexo_ani.message}
                   </p>
@@ -533,21 +477,18 @@ const UpdateAnimal = ({ params }) => {
                 Chip (Opcional)
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuScanLine
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="chip_ani"
                   type="text"
                   placeholder="Chip (Opcional)"
-                  className={inputClass("chip_ani", errors)}
+                  className={getInputClasses("chip_ani", errors)}
                   disabled={isSubmitting}
-                  {...register("chip_ani")} // Registrar (sin required)
+                  {...register("chip_ani")}
                 />
-                {/* Mensaje de error (solo si hay validaciones custom, no hay aquí) */}
               </div>
             </div>
 
@@ -557,24 +498,24 @@ const UpdateAnimal = ({ params }) => {
                 htmlFor="id_gru"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Grupo Animal 
+                Grupo Animal <RequiredAsterisk />
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuUsers
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Select */}
                 <select
                   id="id_gru"
-                  className={selectClass("id_gru", errors, idGruWatched)}
-                  // Deshabilitar si se está enviando o si los grupos no se cargaron (aunque el spinner inicial ya cubre esto)
-                  disabled={isSubmitting || !grupos.length}
+                  className={getInputClasses(
+                    "id_gru",
+                    errors,
+                    true,
+                    !!idGruWatched
+                  )} // Es select, pasar hasValue
+                  disabled={isSubmitting || grupos.length === 0}
                   {...register("id_gru", {
-                    // Registrar y añadir regla de validación
                     required: "Debe seleccionar un grupo",
-                    // La carga de familias se activa automáticamente por el useEffect cuando este valor cambia
                   })}
                 >
                   <option value="">-- Seleccione Grupo --</option>
@@ -584,18 +525,11 @@ const UpdateAnimal = ({ params }) => {
                     </option>
                   ))}
                 </select>
-                {/* Spinner opcional mientras se cargan los grupos inicialmente */}
-                {/* No es estrictamente necesario si isLoadingInitialData bloquea todo, pero puede ser útil */}
-                {/* {isLoadingInitialData && !grupos.length && (
-                   <LuLoader2 className="absolute right-10 top-1/2 transform -translate-y-1/2 text-blue-500 animate-spin z-10" size={20} />
-                 )} */}
-                {/* Flecha decorativa */}
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none">
                   <LuArrowRight size={20} />
                 </div>
-                {/* Mostrar mensaje de error si existe */}
                 {errors.id_gru && (
-                  <p role="alert" className={errorClass}>
+                  <p role="alert" className={errorTextClass}>
                     <FaExclamationCircle className="mr-1" />
                     {errors.id_gru.message}
                   </p>
@@ -609,58 +543,54 @@ const UpdateAnimal = ({ params }) => {
                 htmlFor="codigo_fam"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Familia Animal 
+                Familia Animal <RequiredAsterisk />
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuGitBranch
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Select */}
                 <select
                   id="codigo_fam"
-                  className={selectClass(
+                  className={getInputClasses(
                     "codigo_fam",
                     errors,
-                    watch("codigo_fam")
-                  )}
+                    true,
+                    !!watch("codigo_fam")
+                  )} // Es select, pasar hasValue
                   disabled={
                     isSubmitting ||
-                    !idGruWatched || // Deshabilitar si no hay grupo seleccionado
-                    isLoadingFamilias || // Deshabilitar mientras se cargan las familias para el grupo actual
+                    !idGruWatched || // Deshabilitado si no hay grupo
+                    isLoadingFamilias || // Deshabilitado mientras se cargan
                     (idGruWatched &&
                       familyOptions.length === 0 &&
-                      !isLoadingFamilias) // Deshabilitar si el grupo está seleccionado pero no hay familias cargadas (y no están cargando)
+                      !isLoadingFamilias) // Deshabilitado si el grupo está seleccionado pero no hay familias cargadas y no están cargando
                   }
                   {...register("codigo_fam", {
-                    // Registrar y añadir regla de validación
                     required: "Debe seleccionar una familia",
                   })}
                 >
                   <option value="">-- Seleccione Familia --</option>
-                  {/* Renderizar opciones SOLO si hay un grupo seleccionado */}
-                  {/* familyOptions contendrá las opciones cargadas por el useEffect dependiente */}
-                  {familyOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  {/* Renderizar opciones solo si hay un grupo seleccionado y opciones cargadas */}
+                  {idGruWatched &&
+                    familyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                 </select>
-                {/* Spinner de carga para familias, visible cuando se cargan */}
+                {/* Spinner de carga para familias */}
                 {isLoadingFamilias && (
                   <LuLoader2
                     className="absolute right-10 top-1/2 transform -translate-y-1/2 text-blue-500 animate-spin z-10"
                     size={20}
                   />
                 )}
-                {/* Flecha decorativa */}
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none">
                   <LuArrowRight size={20} />
                 </div>
-                {/* Mostrar mensaje de error si existe */}
                 {errors.codigo_fam && (
-                  <p role="alert" className={errorClass}>
+                  <p role="alert" className={errorTextClass}>
                     <FaExclamationCircle className="mr-1" />
                     {errors.codigo_fam.message}
                   </p>
@@ -677,25 +607,22 @@ const UpdateAnimal = ({ params }) => {
                 Arete (Opcional)
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuTag
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="arete_ani"
                   type="text"
                   placeholder="Arete (Opcional)"
-                  className={inputClass("arete_ani", errors)}
+                  className={getInputClasses("arete_ani", errors)}
                   disabled={isSubmitting}
-                  {...register("arete_ani")} // Registrar (sin required)
+                  {...register("arete_ani")}
                 />
-                {/* Mensaje de error (si aplica) */}
               </div>
             </div>
 
-            {/* Campo PESO ANIMAL (Opcional, Numérico) */}
+            {/* Campo PESO ANIMAL (Opcional) */}
             <div>
               <label
                 htmlFor="peso_ani"
@@ -704,27 +631,21 @@ const UpdateAnimal = ({ params }) => {
                 Peso (Kg) (Opcional)
               </label>
               <div className="relative">
-                {/* Icono */}
                 <LuScale
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="peso_ani"
                   type="number"
-                  step="0.01" // Permite decimales
+                  step="0.01"
                   placeholder="Peso (Kg) (Opcional)"
-                  className={inputClass("peso_ani", errors)}
+                  className={getInputClasses("peso_ani", errors)}
                   disabled={isSubmitting}
-                  {...register("peso_ani", {
-                    valueAsNumber: true, // Convierte el input a número o NaN
-                    // Puedes añadir min/max si quieres
-                  })}
+                  {...register("peso_ani", { valueAsNumber: true })}
                 />
-                {/* Mostrar mensaje de error si existe */}
                 {errors.peso_ani && (
-                  <p role="alert" className={errorClass}>
+                  <p role="alert" className={errorTextClass}>
                     <FaExclamationCircle className="mr-1" />
                     {errors.peso_ani.message}
                   </p>
@@ -732,105 +653,97 @@ const UpdateAnimal = ({ params }) => {
               </div>
             </div>
 
-            {/* Campo FECHA PALPACION (condicional - solo para Hembras) */}
-            {/* Aplicar clases condicionales al div contenedor para deshabilitar/opacar */}
+            {/* Campo FECHA PALPACION (condicional) */}
+            {/* Deshabilitar visual y funcionalmente si no es Hembra */}
             <div
-              className={clsx({
-                "opacity-50 pointer-events-none": sexoAniWatched !== "Hembra",
-              })}
+              className={`relative ${
+                sexoAniWatched !== "Hembra"
+                  ? "opacity-50 pointer-events-none"
+                  : ""
+              }`}
             >
               <label
                 htmlFor="fechaPalpacion_ani"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Fecha Palpación
-                {sexoAniWatched === "Hembra" }
-                {/* Requerido solo si es hembra */}
+                Fecha Palpación{" "}
+                {sexoAniWatched === "Hembra" && <RequiredAsterisk />}
               </label>
               <div className="relative mt-1">
-                {/* Icono */}
                 <LuCalendar
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="fechaPalpacion_ani"
                   type="date"
-                  className={inputClass("fechaPalpacion_ani", errors)}
-                  disabled={isSubmitting || sexoAniWatched !== "Hembra"} // Deshabilitar si se envía o no es hembra
+                  className={getInputClasses("fechaPalpacion_ani", errors)}
+                  disabled={isSubmitting || sexoAniWatched !== "Hembra"}
                   {...register("fechaPalpacion_ani", {
                     required:
-                      sexoAniWatched === "Hembra" // Requerido solo si es hembra
-                        ? "La fecha de palpación es requerida para hembras"
+                      sexoAniWatched === "Hembra"
+                        ? "La fecha de palpación es requerida"
                         : false,
                     validate: (value) => {
-                      // Validar fecha futura solo si el campo está visible y tiene valor
                       if (sexoAniWatched === "Hembra" && value) {
                         const selectedDate = new Date(value);
                         const today = new Date();
-                        today.setHours(0, 0, 0, 0); // Ignorar la hora del día actual
-                        selectedDate.setHours(0, 0, 0, 0); // Ignorar la hora de la fecha seleccionada
+                        today.setHours(0, 0, 0, 0);
+                        selectedDate.setHours(0, 0, 0, 0);
                         if (isNaN(selectedDate.getTime()))
-                          return "Formato de fecha inválido";
-                        return (
-                          selectedDate <= today ||
-                          "La fecha de palpación no puede ser futura"
-                        );
+                          return "Formato inválido";
+                        return selectedDate <= today || "No puede ser futura";
                       }
-                      return true; // No validar si no es hembra o si no hay valor (ya cubierto por required)
+                      return true;
                     },
                   })}
                 />
               </div>
-              {/* Mostrar mensaje de error si existe Y es hembra */}
               {errors.fechaPalpacion_ani && sexoAniWatched === "Hembra" && (
-                <p role="alert" className={errorClass}>
+                <p role="alert" className={errorTextClass}>
                   <FaExclamationCircle className="mr-1" />
                   {errors.fechaPalpacion_ani.message}
                 </p>
               )}
             </div>
 
-            {/* Campo TIEMPO DE GESTACION (condicional - solo para Hembras) */}
-            {/* Aplicar clases condicionales al div contenedor para deshabilitar/opacar */}
+            {/* Campo TIEMPO DE GESTACION (condicional) */}
+            {/* Deshabilitar visual y funcionalmente si no es Hembra */}
             <div
-              className={clsx({
-                "opacity-50 pointer-events-none": sexoAniWatched !== "Hembra",
-              })}
+              className={`relative ${
+                sexoAniWatched !== "Hembra"
+                  ? "opacity-50 pointer-events-none"
+                  : ""
+              }`}
             >
               <label
                 htmlFor="tiempoGestacion_ani"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Tiempo de Gestación{" "}
-                {sexoAniWatched === "Hembra"}
-                {/* Requerido solo si es hembra */}
+                {sexoAniWatched === "Hembra" && <RequiredAsterisk />}
               </label>
               <div className="relative mt-1">
-                {/* Icono */}
                 <LuHourglass
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="tiempoGestacion_ani"
-                  type="text" // Usamos text para permitir "días", "meses", etc.
+                  type="text"
                   placeholder="Gestación (ej: 60 días)"
-                  className={inputClass("tiempoGestacion_ani", errors)}
-                  disabled={isSubmitting || sexoAniWatched !== "Hembra"} // Deshabilitar si se envía o no es hembra
+                  className={getInputClasses("tiempoGestacion_ani", errors)}
+                  disabled={isSubmitting || sexoAniWatched !== "Hembra"}
                   {...register("tiempoGestacion_ani", {
                     required:
-                      sexoAniWatched === "Hembra" // Requerido solo si es hembra
-                        ? "El tiempo de gestación es requerido para hembras"
+                      sexoAniWatched === "Hembra"
+                        ? "El tiempo de gestación es requerido"
                         : false,
                   })}
                 />
               </div>
-              {/* Mostrar mensaje de error si existe Y es hembra */}
               {errors.tiempoGestacion_ani && sexoAniWatched === "Hembra" && (
-                <p role="alert" className={errorClass}>
+                <p role="alert" className={errorTextClass}>
                   <FaExclamationCircle className="mr-1" />
                   {errors.tiempoGestacion_ani.message}
                 </p>
@@ -843,56 +756,47 @@ const UpdateAnimal = ({ params }) => {
                 htmlFor="fechaNacimiento_ani"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Fecha de Nacimiento 
+                Fecha de Nacimiento <RequiredAsterisk />
               </label>
               <div className="relative mt-1">
-                {/* Icono (Puede que tu custom component ya lo tenga, o lo puedes poner aquí) */}
+                {/* Icono (Si tu componente no lo tiene, puedes agregarlo aquí) */}
                 <LuCalendar
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"
                   size={20}
                 />
-                {/* Usar Controller para integrar FechaNacimientoInput con React Hook Form */}
+                {/* Usar Controller para integrar tu componente con RHF */}
                 <Controller
-                  name="fechaNacimiento_ani" // Nombre del campo en el formulario
-                  control={control} // Objeto control de useForm
+                  name="fechaNacimiento_ani"
+                  control={control}
                   rules={{
-                    // Reglas de validación
                     required: "La fecha de nacimiento es requerida",
                     validate: (value) => {
-                      if (!value) return true; // Ya cubierto por required
+                      if (!value) return true;
                       const selectedDate = new Date(value);
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
                       selectedDate.setHours(0, 0, 0, 0);
                       if (isNaN(selectedDate.getTime()))
-                        return "Formato de fecha inválido";
-                      return (
-                        selectedDate <= today ||
-                        "La fecha de nacimiento no puede ser futura"
-                      );
+                        return "Formato inválido";
+                      return selectedDate <= today || "No puede ser futura";
                     },
                   }}
-                  render={(
-                    { field } // Render function recibe 'field' props (value, onChange, onBlur)
-                  ) => (
-                    <FechaNacimientoInput
-                     // Tu componente custom
-                      IconComponent={LuCalendar} // Icono opcional (puedes usar el de tu componente)
-                      {...field} // Pasa automáticamente value, onChange, onBlur
-                      id="fechaNacimiento_ani" // Necesario para la label
-                      
-                      disabled={isSubmitting}
-                      // Pasar error y errorMessage si tu componente los acepta para mostrar el feedback visual interno
+                  render={({ field }) => (
+                    <FechaNacimientoInput // Tu componente de fecha
+                      {...field} // Pasa value, onChange, onBlur
+                      id="fechaNacimiento_ani" // Para la label
+                      className={getInputClasses("fechaNacimiento_ani", errors)} // Clases visuales
+                      disabled={isSubmitting} // Estado de envío
+                      // Pasar error y errorMessage si tu componente FechaNacimientoInput los maneja
                       error={!!errors.fechaNacimiento_ani}
                       errorMessage={errors.fechaNacimiento_ani?.message}
                     />
                   )}
                 />
               </div>
-              {/* Mostrar mensaje de error de React Hook Form si existe */}
-              {/* Esto asegura que el mensaje de error estándar se muestre consistentemente */}
+              {/* Mostrar error de RHF */}
               {errors.fechaNacimiento_ani && (
-                <p role="alert" className={errorClass}>
+                <p role="alert" className={errorTextClass}>
                   <FaExclamationCircle className="mr-1" />
                   {errors.fechaNacimiento_ani.message}
                 </p>
@@ -905,46 +809,39 @@ const UpdateAnimal = ({ params }) => {
                 htmlFor="fechaVacunacion_ani"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Fecha Última Vacunación 
+                Fecha Última Vacunación <RequiredAsterisk />
               </label>
               <div className="relative mt-1">
-                {/* Icono */}
                 <LuCalendar
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="fechaVacunacion_ani"
                   type="date"
-                  className={inputClass("fechaVacunacion_ani", errors)}
+                  className={getInputClasses("fechaVacunacion_ani", errors)}
                   disabled={isSubmitting}
                   {...register("fechaVacunacion_ani", {
-                    // Registrar y añadir reglas de validación
                     required: "La fecha de vacunación es requerida",
                     validate: (value) => {
-                      if (!value) return true; // Ya cubierto por required
+                      if (!value) return true;
                       const selectedDate = new Date(value);
                       const today = new Date();
-                      today.setHours(0, 0, 0, 0); // Ignorar la hora del día actual
-                      selectedDate.setHours(0, 0, 0, 0); // Ignorar la hora de la fecha seleccionada
+                      today.setHours(0, 0, 0, 0);
+                      selectedDate.setHours(0, 0, 0, 0);
                       if (isNaN(selectedDate.getTime()))
-                        return "Formato de fecha inválido";
-                      return (
-                        selectedDate <= today ||
-                        "La fecha de vacunación no puede ser futura"
-                      );
+                        return "Formato inválido";
+                      return selectedDate <= today || "No puede ser futura";
                     },
                   })}
                 />
+                {errors.fechaVacunacion_ani && (
+                  <p role="alert" className={errorTextClass}>
+                    <FaExclamationCircle className="mr-1" />
+                    {errors.fechaVacunacion_ani.message}
+                  </p>
+                )}
               </div>
-              {/* Mostrar mensaje de error si existe */}
-              {errors.fechaVacunacion_ani && (
-                <p role="alert" className={errorClass}>
-                  <FaExclamationCircle className="mr-1" />
-                  {errors.fechaVacunacion_ani.message}
-                </p>
-              )}
             </div>
 
             {/* Campo STATUS ANIMAL */}
@@ -953,39 +850,34 @@ const UpdateAnimal = ({ params }) => {
                 htmlFor="status_ani"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Status 
+                Status <RequiredAsterisk />
               </label>
               <div className="relative mt-1">
-                {/* Icono */}
                 <LuActivity
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Select */}
                 <select
                   id="status_ani"
-                  className={selectClass(
+                  className={getInputClasses(
                     "status_ani",
                     errors,
-                    watch("status_ani") // Usar watch para el estilo de texto gris/negro
-                  )}
+                    true,
+                    !!watch("status_ani")
+                  )} // Es select, pasar hasValue
                   disabled={isSubmitting}
                   {...register("status_ani", {
-                    // Registrar y añadir regla de validación
                     required: "El status es requerido",
                   })}
                 >
-                  {/* Opciones con valor como string para el select */}
                   <option value="1">Activo</option>
                   <option value="2">Inactivo</option>
                 </select>
-                {/* Flecha decorativa */}
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none">
                   <LuArrowRight size={20} />
                 </div>
-                {/* Mostrar mensaje de error si existe */}
                 {errors.status_ani && (
-                  <p role="alert" className={errorClass}>
+                  <p role="alert" className={errorTextClass}>
                     <FaExclamationCircle className="mr-1" />
                     {errors.status_ani.message}
                   </p>
@@ -993,7 +885,7 @@ const UpdateAnimal = ({ params }) => {
               </div>
             </div>
 
-            {/* Campo PRECIO ANIMAL (Opcional, Numérico) */}
+            {/* Campo PRECIO ANIMAL (Opcional) */}
             <div>
               <label
                 htmlFor="precio_ani"
@@ -1002,27 +894,21 @@ const UpdateAnimal = ({ params }) => {
                 Precio (Opcional)
               </label>
               <div className="relative mt-1">
-                {/* Icono */}
                 <LuDollarSign
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={20}
                 />
-                {/* Input */}
                 <input
                   id="precio_ani"
                   type="number"
-                  step="0.01" // Permite decimales
+                  step="0.01"
                   placeholder="Precio (Opcional)"
-                  className={inputClass("precio_ani", errors)}
+                  className={getInputClasses("precio_ani", errors)}
                   disabled={isSubmitting}
-                  {...register("precio_ani", {
-                    valueAsNumber: true, // Convierte el input a número o NaN
-                    // Puedes añadir min/max si quieres
-                  })}
+                  {...register("precio_ani", { valueAsNumber: true })}
                 />
-                {/* Mostrar mensaje de error si existe */}
                 {errors.precio_ani && (
-                  <p role="alert" className={errorClass}>
+                  <p role="alert" className={errorTextClass}>
                     <FaExclamationCircle className="mr-1" />
                     {errors.precio_ani.message}
                   </p>
@@ -1031,21 +917,19 @@ const UpdateAnimal = ({ params }) => {
             </div>
           </div>
 
-          {/* Botón de Envío: Ocupa las 2 columnas en md+ */}
+          {/* Botón de Envío */}
           <div className="md:col-span-2 pt-4">
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitting} // Deshabilitar mientras se envía
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
-                // Mostrar spinner y texto mientras se envía
                 <>
                   <LuLoader2 className="animate-spin mr-2" size={20} />
                   Actualizando...
                 </>
               ) : (
-                // Texto e icono normal cuando no se está enviando
                 <>
                   Actualizar Animal
                   <LuArrowRight className="ml-2" size={20} />

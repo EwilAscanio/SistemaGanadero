@@ -1,129 +1,157 @@
 "use client";
-import { useState, useEffect } from "react";
-import { FaChevronLeft, FaChevronRight, FaUtensils } from "react-icons/fa";
+import { useState } from "react";
+import { FaEye, FaEyeSlash, FaExclamationCircle } from "react-icons/fa";
+import FondoLogin from "@/images/ImagenSesion.jpeg";
+import Logo from "@/images/Logo.png";
 import Image from "next/image";
 
-const foodItems = [
-  {
-    id: 1,
-    name: "Gourmet Burger",
-    description: "Juicy beef patty with artisanal toppings",
-    price: "$12.99",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-  },
-  {
-    id: 2,
-    name: "Margherita Pizza",
-    description: "Classic Italian pizza with fresh mozzarella",
-    price: "$14.99",
-    image:
-      "https://images.unsplash.com/photo-1604382355076-af4b0eb60143?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-  },
-  {
-    id: 3,
-    name: "Sushi Platter",
-    description: "Assorted fresh sushi rolls",
-    price: "$22.99",
-    image:
-      "https://images.unsplash.com/photo-1553621042-f6e147245754?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1025&q=80",
-  },
-  {
-    id: 4,
-    name: "Caesar Salad",
-    description: "Crisp romaine lettuce with creamy dressing",
-    price: "$9.99",
-    image:
-      "https://images.unsplash.com/photo-1546793665-c74683f339c1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-  },
-];
+const LoginForm = () => {
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
-const CarouselItem = ({ item, isActive }) => (
-  <div
-    className={`absolute w-full h-full transition-opacity duration-500 ${
-      isActive ? "opacity-100" : "opacity-0"
-    }`}
-  >
-    <Image
-      src={item.image}
-      alt={item.name}
-      className="w-full h-full object-cover rounded-lg"
-    />
-    <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-6 rounded-lg">
-      <h2 className="text-white text-2xl font-bold mb-2">{item.name}</h2>
-      <p className="text-white mb-2">{item.description}</p>
-      <p className="text-yellow-400 text-xl font-bold mb-4">{item.price}</p>
-    </div>
-  </div>
-);
-
-const RestaurantCarousel = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const nextSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % foodItems.length);
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.username || formData.username.length < 3) {
+      newErrors.username = "Usuario debe tener al menos 3 caracteres";
+    }
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = "Contraseña debe tener al menos 8 caracteres";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const prevSlide = () => {
-    setCurrentIndex(
-      (prevIndex) => (prevIndex - 1 + foodItems.length) % foodItems.length
-    );
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+      console.log("Form submitted:", formData);
+    }
   };
 
-  useEffect(() => {
-    const timer = setInterval(nextSlide, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleKeyDown = (e) => {
-    if (e.key === "ArrowLeft") prevSlide();
-    if (e.key === "ArrowRight") nextSlide();
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
-    <div
-      className="relative w-full max-w-4xl mx-auto h-96 overflow-hidden rounded-lg shadow-xl"
-      onKeyDown={handleKeyDown}
-      tabIndex="0"
-    >
-      {foodItems.map((item, index) => (
-        <CarouselItem
-          key={item.id}
-          item={item}
-          isActive={index === currentIndex}
-        />
-      ))}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition duration-300 ease-in-out focus:outline-none"
-        aria-label="Previous slide"
-      >
-        <FaChevronLeft className="text-black text-2xl" />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition duration-300 ease-in-out focus:outline-none"
-        aria-label="Next slide"
-      >
-        <FaChevronRight className="text-black text-2xl" />
-      </button>
-      <div className="absolute top-4 left-4 bg-white rounded-full p-2 shadow-md">
-        <FaUtensils className="text-yellow-500 text-2xl" />
-      </div>
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {foodItems.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`w-3 h-3 rounded-full ${
-              index === currentIndex ? "bg-white" : "bg-white bg-opacity-50"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
+    // Contenedor principal con fondo y centrado general
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-lg shadow-xl overflow-hidden">
+        <div className="relative md:w-1/2 h-64 md:h-auto flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-tr-none overflow-hidden">
+          <Image
+            src={FondoLogin}
+            alt="Fondo de Inicio de Sesión"
+            fill // Usar fill para que la imagen cubra este contenedor
+            className="object-cover" // Asegura que la imagen cubra sin distorsionarse
           />
-        ))}
+        </div>
+
+        <div className="w-full md:w-1/2 p-8 flex items-center justify-center bg-white rounded-b-lg md:rounded-r-lg md:rounded-tl-none">
+          <div className="w-full max-w-md space-y-8">
+            <div className="text-center">
+              {/* Logo de la empresa */}
+              <Image
+                src={Logo}
+                alt="Logo"
+                className="h-28 w-auto mb-4 mx-auto"
+              />
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Bienvenido
+              </h2>
+              <p className="text-gray-600">
+                Ingrese sus credenciales para continuar
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Usuario
+                </label>
+                <div className="mt-1 relative">
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      errors.username ? "border-red-500" : "border-gray-300"
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                    placeholder="Ingrese su usuario"
+                    value={formData.username}
+                    onChange={handleChange}
+                  />
+                  {errors.username && (
+                    <div className="flex items-center mt-1 text-red-500 text-sm">
+                      <FaExclamationCircle className="mr-1" />
+                      <span>{errors.username}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Contraseña
+                </label>
+                <div className="mt-1 relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      errors.password ? "border-red-500" : "border-gray-300"
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                    placeholder="Ingrese su contraseña"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? (
+                      <FaEyeSlash className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <FaEye className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                  {errors.password && (
+                    <div className="flex items-center mt-1 text-red-500 text-sm">
+                      <FaExclamationCircle className="mr-1" />
+                      <span>{errors.password}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  className="w-full flex justify-center mt-16 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!formData.username || !formData.password}
+                >
+                  Iniciar Sesión
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default RestaurantCarousel;
+export default LoginForm;

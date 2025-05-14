@@ -1,4 +1,4 @@
-CREATE DATABASE `db_proyecto`
+CREATE DATABASE `db_ganadero`
 
 CREATE TABLE `users` (
   `id_usr` integer PRIMARY KEY AUTO_INCREMENT,
@@ -12,7 +12,7 @@ CREATE TABLE `users` (
 
 CREATE TABLE `roles` (
   `id_rol` integer PRIMARY KEY AUTO_INCREMENT,
-  `name_rol` VARCHAR(50) DEFAULT 'Usuario',
+  `name_rol` VARCHAR(50) DEFAULT 'Usuario'
 );
 
 
@@ -25,11 +25,11 @@ FOREIGN KEY (id_rol) REFERENCES roles(id_rol);
  
 
 CREATE TABLE `animal` (
-  `codigo_ani` integer PRIMARY KEY unique,
+  `codigo_ani` varchar(15) PRIMARY KEY unique,
   `nombre_ani` varchar(100) NOT NULL,
   `chip_ani` integer(50) NOT NULL,
   `id_gru` integer NOT NULL,
-  `id_fam` integer NOT NULL,
+  `codigo_fam` varchar(5) NOT NULL,
   `sexo_ani` varchar(50) NOT NULL,
   `fechaPalpacion_ani` date,
   `tiempoGestacion_ani` integer NOT NULL DEFAULT 0,
@@ -48,27 +48,55 @@ CREATE TABLE `grupo` (
   `name_gru` varchar(50) NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO grupo(name_gru) VALUES('Bobinos')
-INSERT INTO grupo(name_gru) VALUES('Becerros')
-INSERT INTO grupo(name_gru) VALUES('Caballos')
+
+INSERT INTO grupo(name_gru) VALUES('BUFALINOS')
+INSERT INTO grupo(name_gru) VALUES('BOBINOS')
+INSERT INTO grupo(name_gru) VALUES('EQUINOS')
 
 ALTER TABLE animal
 ADD CONSTRAINT `FK_AnimalGrupo`
 FOREIGN KEY (`id_gru`) REFERENCES grupo(`id_gru`);
 
 CREATE TABLE `familia` (
-  `id_fam` integer PRIMARY KEY AUTO_INCREMENT,
+  `id_gru` integer NOT NULL,
+  `codigo_fam` varchar(5) PRIMARY KEY  NOT NULL,
   `name_fam` varchar(50) NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE animal
 ADD CONSTRAINT `FK_AnimalFamilia`
-FOREIGN KEY (`id_fam`) REFERENCES familia(`id_fam`);
+FOREIGN KEY (`codigo_fam`) REFERENCES familia(`codigo_fam`);
+
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A1','BUFALOS');
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A2','BUBILLOS');
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A3','BUBANTES');
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A4','BUCERROS');
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A5','BUFALAS');
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A6','BUBILLAS');
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A7','BUBAUTAS');
+    INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(1, 'A9','BUFALAS REPRODUCTORAS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B1','TOROS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B2','MAUTES');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B3','BECERROS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B4','VACAS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B5','NOVILLAS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B6','MAUTAS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B7','BECERRAS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(2, 'B8','TOROS REPRODUCTORES');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(3, 'C1','CABALLOS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(3, 'C2','POTROS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(3, 'C3','YEGUAS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(3, 'C4','POTRAS');
+  INSERT INTO familia(id_gru, codigo_fam, name_fam) VALUES(3, 'C5','MULAS');
+
+ALTER TABLE familia
+ADD CONSTRAINT `FK_FamiliaGrupo`
+FOREIGN KEY (`id_gru`) REFERENCES grupo(`id_gru`);
 
 CREATE TABLE `produccionleche` (
   `id_lec` integer PRIMARY KEY AUTO_INCREMENT,
-  `codigo_ani` varchar(50) NOT NULL,
+  `codigo_ani` varchar(15) NOT NULL,
   `litros_lec` decimal NOT NULL DEFAULT 0,
    `fecha_lec` date NOT NULL
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -85,7 +113,7 @@ CREATE TABLE `palpacion` (
 
 CREATE TABLE `nacimiento` (
   `id_nac` integer PRIMARY KEY AUTO_INCREMENT,
-  `codigo_ani` varchar(50) NOT NULL,
+  `codigo_ani` varchar(15) NOT NULL,
   `fecha_nac` date NOT NULL,
   `cantidadHijos_nac` integer DEFAULT 0,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -112,7 +140,7 @@ CREATE TABLE `factura`(
 
 CREATE TABLE `detalle_factura`(
   `numero_fac` integer not null,
-  `codigo_ani` integer primary key NOT NULL,
+  `codigo_ani` varchar(15) primary key NOT NULL,
   `cantidad_fac` integer NOT NULL,
   `precio_fac` decimal(10,2) NOT NULL,
   `total_fac` decimal(10,2) NOT NULL,
@@ -138,12 +166,8 @@ CREATE TABLE `configuracion` (
     `ultima_vacunacion` date NOT NULL
 );
 
+INSERT INTO configuracion(numero_fac, ultima_vacunacion) VALUES(0000001, '2025-04-29')
 
-
-
-
-INSERT INTO familia(name_fam) VALUES('Toros')
-INSERT INTO familia(name_fam) VALUES('Vacas')
 
 
 -- Eliminar una tabla
@@ -173,5 +197,6 @@ INSERT INTO usuario (id, nombre, email, rol)
 INSERT INTO usuario (nombre_usr, password_usr, email_usr, rol_usr)
 VALUES ("Ewil", 1234, "ewil@gmail.com", "administardor")
 
-
+INSERT INTO usuario (codigo_ani, nombre_ani, chip_ani, id_gru, id_fam, sexo_ani, fechaPalpacion_ani, tiempoGestacion_ani, peso_ani, arete_ani, fechaNacimiento_ani, fechaVacunacion_ani, status_ani, precio_ani)
+VALUES (10011000, "Padrote #01")
 

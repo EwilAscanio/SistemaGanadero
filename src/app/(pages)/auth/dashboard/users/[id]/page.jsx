@@ -2,23 +2,17 @@ import React from "react";
 import axios from "axios";
 import Image from "next/image";
 import ImagenProfile from "@/images/8380015.jpg";
-
 import ButtonDelete from "@/components/ButtonDelete";
 
 const loadUser = async (user_id) => {
   const { data } = await axios.get(
     `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/users/${user_id}`
   );
-  console.log("Data recibida de funcion loadUser NEwWS:", data);
   return data;
 };
 
 const UserPage = async ({ params }) => {
-  console.log("PARAMS NEW", params.id);
-
   const user = await loadUser(params.id);
-
-  console.log("USER NEW", user);
 
   return (
     <div className="w-full flex justify-center items-center flex-wrap gap-8 ">

@@ -4,23 +4,23 @@ import ImagenProfile from "@/images/8380015.jpg";
 import Image from "next/image";
 
 const loadUsers = async () => {
-  const { data } = await axios.get("http://localhost:3000/api/users");
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/users`
+  );
 
-  console.log("DATA RECIBIDA GET", data);
   return data;
 };
 
 const UsersPage = async () => {
   const users = await loadUsers();
 
-  console.log("USUARIOS RECIBIDOS", users);
   let rol = "";
   return (
     <div className="w-full flex justify-center items-center flex-wrap gap-8">
       {users.map((user) => (
         <Link
           key={user.id_usr}
-          href={`http://localhost:3000/auth/dashboard/users/${user.id_usr}`}
+          href={`${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/auth/dashboard/users/${user.id_usr}`}
         >
           <section className="flex font-medium items-center justify-center hover:bg-blue-100 hover:rounded-2xl ">
             <section className="w-80 mx-auto rounded-2xl px-8 py-6 shadow-lg">

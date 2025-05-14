@@ -18,6 +18,12 @@ export const PUT = async (req) => {
       `UPDATE animal SET fechaVacunacion_ani = "${fecha.fechaVacunacion_ani}"`
     );
 
+    const resultConfig = await conn.query(
+      `UPDATE configuracion SET ultima_vacunacion = "${fecha.fechaVacunacion_ani}" WHERE id = 1`
+    
+      // `UPDATE configuracion SET ultima_vacunacion = "${fecha.fechaVacunacion_ani}"`
+    );
+
     // Verificar si se actualizó algún registro
     if (result.affectedRows === 0) {
       return NextResponse.json(

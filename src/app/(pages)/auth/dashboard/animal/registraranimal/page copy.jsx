@@ -428,7 +428,13 @@ const Animal = () => {
                     // El placeholder en type="date" no se ve en todos los navegadores, el label es más importante
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     disabled={selectedSex !== "Hembra"} // Deshabilitar si no es hembra
-                    {...register("fechaPalpacion_ani", )}
+                    {...register("fechaPalpacion_ani", {
+                      // Requerido solo si es hembra
+                      required:
+                        selectedSex === "Hembra"
+                          ? "La fecha de palpación es requerida para hembras"
+                          : false,
+                    })}
                   />
                 </div>
                 {/* Mover el span de error DENTRO de este div contenedor */}
@@ -456,7 +462,16 @@ const Animal = () => {
                     placeholder="Gestación (días/meses)"
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     disabled={selectedSex !== "Hembra"}
-                    {...register("tiempoGestacion_ani", )}
+                    {...register("tiempoGestacion_ani", {
+                      required:
+                        selectedSex === "Hembra"
+                          ? "El tiempo de gestación es requerido para hembras"
+                          : false,
+                      minLength:
+                        selectedSex === "Hembra"
+                          ? { value: 1, message: "Indique el tiempo" }
+                          : undefined, // Ajusta según necesites
+                    })}
                   />
                   {errors.tiempoGestacion_ani && (
                     <span className="text-red-600 text-sm mt-1 block">

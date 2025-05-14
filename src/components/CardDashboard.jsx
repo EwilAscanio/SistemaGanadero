@@ -1,7 +1,7 @@
 const CardDashboard = ({ title, value, icon, bgColor }) => {
   return (
     <div
-      className={`flex max-w-sm bg-white border border-gray-200 rounded-lg shadow-lg hover:bg-blue-200 mx-auto mt-5 justify-between`}
+      className={`flex max-w-sm bg-white border border-gray-200 rounded-lg shadow-lg hover:bg-blue-200 mx-auto justify-between`}
     >
       <div className="p-5">
         <h5 className="mb-2 text-lg font-bold tracking-tight text-gray-900">

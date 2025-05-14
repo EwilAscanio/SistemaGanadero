@@ -5,22 +5,18 @@ import Image from "next/image";
 
 const loadUsers = async () => {
   const { data } = await axios.get("http://localhost:3000/api/users");
-
-  console.log("DATA RECIBIDA GET", data);
   return data;
 };
 
 const UpdatePage = async () => {
   const users = await loadUsers();
 
-  console.log("USUARIOS RECIBIDOS", users);
-
   return (
     <div className="w-full flex justify-center items-center flex-wrap gap-8">
       {users.map((user) => (
         <Link
           key={user.id_usr}
-          href={`/auth/dashboard/updateusers/${user.id_usr}`}
+          href={`${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/auth/dashboard/updateusers/${user.id_usr}`}
         >
           <section className="flex font-medium items-center justify-center hover:bg-blue-100 hover:rounded-2xl ">
             <section className="w-80 mx-auto rounded-2xl px-8 py-6 shadow-lg">

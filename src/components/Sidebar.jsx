@@ -17,9 +17,10 @@ import { TbReportAnalytics } from "react-icons/tb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import axios from "axios";
+import Link from "next/link";
 
 const loadUser = async (email) => {
-  const { data } = await axios.get(`http://localhost:3000/api/users/${email}`);
+  const { data } = await axios.get(`${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/users/${email}`);
 
   return data;
 };
@@ -30,7 +31,7 @@ const Sidebar = async () => {
 
   return (
     <>
-      <div className="flex flex-col gap-1 items-center mt-10">
+      <div className="flex flex-col gap-2 items-center mt-4">
         <h2 className="font-bold underline text-blue-800 drop-shadow-lg text-lg">
           Menu de Usuarios
         </h2>
@@ -69,8 +70,8 @@ const Sidebar = async () => {
         )}
       </div>
 
-      <div className="flex flex-col gap-3 items-center">
-        <h2 className="mt-4 font-bold underline text-blue-800 drop-shadow-lg text-lg">
+      <div className="flex flex-col gap-2 items-center">
+        <h2 className="mt-2 font-bold underline text-blue-800 drop-shadow-lg text-lg">
           Procesos
         </h2>
         <Button
@@ -113,6 +114,8 @@ const Sidebar = async () => {
           content="Reportes"
           icono={<FaChartLine />}
         />
+
+        
       </div>
     </>
   );

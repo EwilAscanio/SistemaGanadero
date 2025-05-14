@@ -393,10 +393,9 @@ const Animal = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Arete"
+                  placeholder="Arete (Opcional)"
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   {...register("arete_ani", {
-                    required: "El arete del animal es requerido",
                     minLength: {
                       value: 2,
                       message: "El arete debe tener mínimo 2 caracteres",
@@ -428,7 +427,13 @@ const Animal = () => {
                     // El placeholder en type="date" no se ve en todos los navegadores, el label es más importante
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     disabled={selectedSex !== "Hembra"} // Deshabilitar si no es hembra
-                    {...register("fechaPalpacion_ani", )}
+                    {...register("fechaPalpacion_ani", {
+                      // Requerido solo si es hembra
+                      required:
+                        selectedSex === "Hembra"
+                          ? "La fecha de palpación es requerida para hembras"
+                          : false,
+                    })}
                   />
                 </div>
                 {/* Mover el span de error DENTRO de este div contenedor */}
@@ -445,7 +450,7 @@ const Animal = () => {
                   Tiempo de Gestacion
                 </label>
                 <div className="relative">
-                  
+                  {" "}
                   {/* Este div ya estaba para el ícono y es el elemento del grid */}
                   <LuHourglass
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -456,7 +461,16 @@ const Animal = () => {
                     placeholder="Gestación (días/meses)"
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     disabled={selectedSex !== "Hembra"}
-                    {...register("tiempoGestacion_ani", )}
+                    {...register("tiempoGestacion_ani", {
+                      required:
+                        selectedSex === "Hembra"
+                          ? "El tiempo de gestación es requerido para hembras"
+                          : false,
+                      minLength:
+                        selectedSex === "Hembra"
+                          ? { value: 1, message: "Indique el tiempo" }
+                          : undefined, // Ajusta según necesites
+                    })}
                   />
                   {errors.tiempoGestacion_ani && (
                     <span className="text-red-600 text-sm mt-1 block">
@@ -477,59 +491,29 @@ const Animal = () => {
                     required: "La fecha de nacimiento es requerida",
                     validate: (value) => {
                       if (!value) return true; // No validar si está vacío (ya lo cubre required)
-                    
-                      // Esperamos el formato yyyy-mm-dd del input type="date"
-                      const parts = value.split("-"); // ¡Dividir por guión (-) ahora!
-                    
+                      const today = new Date();
+                      const parts = value.split("/");
                       // Asegurarse de que hay 3 partes y son números válidos
                       if (
                         parts.length === 3 &&
-                        !isNaN(parts[0]) && // yyyy
-                        !isNaN(parts[1]) && // mm
-                        !isNaN(parts[2])    // dd
+                        !isNaN(parts[0]) &&
+                        !isNaN(parts[1]) &&
+                        !isNaN(parts[2])
                       ) {
-                        // Extraer las partes en el orden correcto: año, mes, día
-                        const [yyyy, mm, dd] = parts.map(Number);
-                    
-                        // Opcional pero útil: verificación básica de rangos
-                         if (mm < 1 || mm > 12 || dd < 1 || dd > 31) {
-                             return "Fecha inválida. Mes o día fuera de rango.";
-                         }
-                    
-                    
-                        // Los meses en JavaScript son 0-indexados (enero es 0, diciembre es 11)
+                        const [dd, mm, yyyy] = parts.map(Number);
+                        // Meses en JS son 0-indexados (mm - 1)
                         const selectedDate = new Date(yyyy, mm - 1, dd);
-                    
-                        // --- **VERIFICACIÓN ADICIONAL DE FECHA VÁLIDA** ---
-                        // Comprobar si los componentes de la fecha creada coinciden con los componentes de entrada.
-                        // Esto detecta fechas numéricamente inválidas como el 31 de Febrero.
-                        const isValidDate =
-                          selectedDate.getFullYear() === yyyy &&
-                          selectedDate.getMonth() === mm - 1 &&
-                          selectedDate.getDate() === dd;
-                    
-                        if (!isValidDate) {
-                          return "Fecha inválida. Por favor, asegúrate de que la fecha exista (ej. 31 de Febrero no existe).";
-                        }
-                        // --- **FIN VERIFICACIÓN ADICIONAL** ---
-                    
-                    
-                        const today = new Date();
                         // Ajustar la hora a 0 para comparar solo fechas
                         today.setHours(0, 0, 0, 0);
                         selectedDate.setHours(0, 0, 0, 0);
-                    
                         return (
                           selectedDate <= today ||
                           "La fecha de nacimiento no puede ser futura"
                         );
                       }
-                    
-                      // Si el formato no es yyyy-mm-dd (esto es menos probable con type="date" a menos que el valor se manipule)
-                      console.error("Formato de fecha inesperado:", value); // Para depuración
-                      return "Formato de fecha inválido. Por favor, usa el formato yyyy-mm-dd (el navegador lo gestiona).";
+                      // Si el formato no es el esperado, la validación falla o se asume inválido
+                      return "Formato de fecha inválido"; // O simplemente true si confías en el componente
                     },
-                    
                   })}
                   error={errors.fechaNacimiento_ani}
                 />
