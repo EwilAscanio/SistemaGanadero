@@ -67,7 +67,7 @@ export const DELETE = async (req, { params }) => {
 
 export const PUT = async (req, { params }) => {
   try {
-    const {
+    let {
       codigo_ani,
       nombre_ani,
       chip_ani,
@@ -83,6 +83,21 @@ export const PUT = async (req, { params }) => {
       status_ani,
       precio_ani,
     } = await req.json();
+
+
+    // --- LÓGICA DE NORMALIZACIÓN ---
+    
+    // 1. Si el chip viene vacío, nulo o solo con espacios, lo dejamos como null (o "" si prefieres)
+    if (!chip_ani || chip_ani.trim() === "") {
+      chip_ani = 0; // O utiliza "" dependiendo de si tu DB acepta NULL
+    }
+
+    // 2. Si el peso es 0, menor a 0 o no es un número, le asignamos 1
+    if (!peso_ani || parseFloat(peso_ani) <= 0) {
+      peso_ani = 1;
+    }
+    // -------------------------------
+
 
     // Actualizar el animal en la base de datos
     const result = await conn.query(

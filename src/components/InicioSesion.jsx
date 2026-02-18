@@ -6,13 +6,12 @@ import { LuUser, LuLock, LuArrowRight } from "react-icons/lu";
 import { FaEye, FaEyeSlash, FaExclamationCircle } from "react-icons/fa";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
-import Link from "next/link";
 import Swal from "sweetalert2";
 import Image from "next/image";
-import FondoLogin from "@/images/ImagenSesion.jpeg";
+import FondoLogin from "@/images/IniciodeSesion.webp";
 import Logo from "@/images/Logo.png";
 
-const MergedLoginForm = () => {
+const InicioSesion = () => {
   // Estado para mostrar/ocultar la contraseña
   const [showPassword, setShowPassword] = useState(false);
   // Estado para manejar errores generales de autenticación (aunque SweetAlert2 ya lo maneja visualmente)
@@ -77,7 +76,10 @@ const MergedLoginForm = () => {
             src={FondoLogin}
             alt="Fondo de Inicio de Sesión"
             fill
-            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
+            style={{ objectFit: "cover" }} // Cambiado a style para evitar problemas de Tailwind
+            //className="object-cover"
           />
         </div>
 
@@ -229,4 +231,4 @@ const MergedLoginForm = () => {
   );
 };
 
-export default MergedLoginForm;
+export default InicioSesion;

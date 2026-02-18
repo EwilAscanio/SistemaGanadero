@@ -13,7 +13,7 @@ const geistMono = localFont({
 });
 
 export const metadata = {
-  title: "Proyecto final",
+  title: "Sistema Ganadero",
   description: "Creado por EwilDev",
 };
 

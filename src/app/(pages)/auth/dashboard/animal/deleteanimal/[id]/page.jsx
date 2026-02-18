@@ -167,7 +167,7 @@ const DeleteAnimal = ({ params }) => {
   }
 
   return (
-    <div className="flex items-center justify-center p-4 min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center p-4 bg-gray-100">
       <div className="bg-white rounded-lg shadow-xl sm:p-8 max-w-4xl w-full">
         <div className="text-center mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">

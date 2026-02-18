@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export const GET = async (request, { params }) => {
   try {
-    console.log("params", params);
+    
     if (!params.id) {
       return NextResponse.json(
         {
@@ -17,8 +17,6 @@ export const GET = async (request, { params }) => {
 
     const result = await conn.query(`
           SELECT * FROM familia where id_gru = "${params.id}"`);
-
-    console.log("result", result);
 
     if (result.lenght === 0 || result == []) {
       return NextResponse(

@@ -56,7 +56,7 @@ const Page = () => {
         <div className="p-8 bg-white rounded-lg shadow-xl text-center max-w-md w-full">
           <LuLoader2 className="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4" />
           <p className="text-gray-700 text-lg font-semibold">
-            Cargando datos del animal y opciones...
+            Cargando Dashboard...
           </p>
         </div>
       </div>

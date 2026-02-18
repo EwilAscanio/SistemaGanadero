@@ -6,8 +6,6 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const searchTerm = searchParams.get('search');
 
-    console.log("searchTerm:", searchTerm);
-
     if (!searchTerm) {
       return NextResponse.json([]);
     }
@@ -27,7 +25,6 @@ export async function GET(req) {
 
     // === PASO DE DEPURACIÓN: Captura el resultado completo y LOGÉALO ===
     const queryResult = await conn.query(query, [param]);
-    console.log("Resultado completo de la consulta:", queryResult);
     // === FIN PASO DE DEPURACIÓN ===
 
     // Ahora intenta acceder a las filas basándote en lo que veas en el log
@@ -39,17 +36,17 @@ export async function GET(req) {
     // 1. Si queryResult es [filas, campos] (esperado con mysql2 promise):
     if (Array.isArray(queryResult) && Array.isArray(queryResult[0])) {
          rows = queryResult[0];
-         console.log("Resultado parece ser [filas, campos]. Usando queryResult[0].");
+        
     }
     // 2. Si queryResult es solo el array de filas directamente:
     else if (Array.isArray(queryResult)) {
          rows = queryResult;
-         console.log("Resultado parece ser solo el array de filas. Usando queryResult.");
+         
     }
     // 3. Si queryResult es un objeto con una propiedad 'results':
     else if (typeof queryResult === 'object' && queryResult !== null && Array.isArray(queryResult.results)) {
          rows = queryResult.results;
-         console.log("Resultado parece ser un objeto con 'results'. Usando queryResult.results.");
+      
     }
      // Agrega más checks si queryResult tiene otra estructura inesperada
     else {
@@ -65,10 +62,6 @@ export async function GET(req) {
        return NextResponse.json({ message: "Error procesando datos de la base de datos." }, { status: 500 });
     }
 
-
-    console.log("Filas obtenidas:", rows); // Loggea las filas antes de enviarlas
-
-
     // Devolver los resultados como JSON
     return NextResponse.json(rows);
 
@@ -76,12 +69,7 @@ export async function GET(req) {
     console.error("Error en la consulta o búsqueda de animales:", error); // Mensaje de error más específico
     return NextResponse.json({ message: "Ocurrió un error al buscar animales." }, { status: 500 });
   } finally {
-      // Asegúrate de no cerrar la conexión si usas un pool.
-      // Si no usas pool y creas una conexión por cada request (no recomendado en producción),
-      // entonces deberías cerrarla aquí.
-      // if (conn && typeof conn.end === 'function') {
-      //   await conn.end();
-      // }
+      
   }
 }
 

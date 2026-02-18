@@ -1,16 +1,13 @@
-import React from 'react';
-// Importa tus componentes y librerías necesarias
-import Image from "next/image"; // Asegúrate de importar si usas Next.js Image
-import { TiThMenu } from "react-icons/ti"; // Importa tus iconos
-import { FaUserCircle, FaSearch } from "react-icons/fa"; // Importa tus iconos
-import { IoIosNotifications } from "react-icons/io"; // Importa tus iconos
-import imgbandera from "@/images/banderaVzla.png"; // Importa tu imagen
-import { getServerSession } from "next-auth"; // Importa si usas NextAuth
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Importa si usas NextAuth
-import LinkSignout from "./ui/LinkSignout"; // Importa tu componente LinkSignout
-import axios from "axios"; // Importa axios si lo usas
 
-// Simulación de funciones y datos para el ejemplo
+import Image from "next/image";
+import { FaSearch } from "react-icons/fa";
+import { FaUserTie } from "react-icons/fa";
+import imgbandera from "@/images/banderaVzla.png";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import LinkSignout from "./ui/LinkSignout";
+import axios from "axios";
+
 const loadUser = async (email) => {
   const { data } = await axios.get(
     `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/users/${email}`);
@@ -18,14 +15,6 @@ const loadUser = async (email) => {
   return { data }; 
 };
 
-
-// const LinkSignout = () => {
-//     // Componente de ejemplo para cerrar sesión
-//     return <button className="text-red-600 hover:underline text-sm">Cerrar Sesión</button>;
-// };
-
-// Importa tu imagen de bandera real
-//const imgbandera = "/path/to/your/banderaVzla.png"; // Reemplaza con la ruta correcta o el import
 
 const NavRight = async () => {
 
@@ -66,13 +55,28 @@ const NavRight = async () => {
       </div>
 
       {/* Sección Derecha: Notificaciones, Idioma, Usuario, Cerrar Sesión */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-10">
         
 
         {/* Idioma y Bandera */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4 ">
           {/* Imagen de Bandera */}            
-          <Image src={imgbandera} alt="Bandera de Venezuela" width={24} height={18} className="w-6 h-auto rounded-sm" />  {/* Ejemplo con Next.js Image */}
+          {/* <Image src={imgbandera} 
+          alt="Bandera de Venezuela" 
+          width={24} 
+          height={18} 
+          className="w-6 h-auto rounded-sm" 
+          /> */}
+
+          <Image 
+          src={imgbandera} 
+          alt="Bandera de Venezuela" 
+          className="w-10 h-auto rounded-sm" 
+          sizes="50vw"
+          style={{ objectFit: "contain" }} // Cambiado a style para evitar problemas de Tailwind
+          />
+
+
           <p className="text-gray-800 text-sm">Español</p>
         </div>
 
@@ -80,8 +84,10 @@ const NavRight = async () => {
         {user && ( // Mostrar solo si hay usuario
           <div className="flex items-center gap-3">
             {/* Ícono de Usuario */}
-            {/* Reemplaza con tu componente de ícono FaUserCircle */}
-            <i className="text-2xl text-gray-600"></i> {/* Placeholder */}
+           
+            <FaUserTie className="text-2xl text-gray-800"></FaUserTie> 
+            
+            
             <div className="text-sm">
               <p className="font-semibold text-gray-800">{user.name}</p>
               <p className="text-gray-600">{nombreRol}</p>
@@ -93,8 +99,8 @@ const NavRight = async () => {
         {/* Enlace/Botón Cerrar Sesión */}
         {user && ( // Mostrar solo si hay usuario
            <div>
-             {/* Reemplaza con tu componente LinkSignout */}
-             <LinkSignout /> {/* Placeholder */}
+             
+             <LinkSignout /> 
            </div>
         )}
 

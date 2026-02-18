@@ -3,21 +3,19 @@ import Button from "./Button";
 import { MdDashboardCustomize } from "react-icons/md";
 import {
   FaCow,
-  FaUsers,
-  FaUserShield,
   FaBriefcaseMedical,
   FaWeightScale,
   FaHeart,
   FaHorseHead,
   FaPercent,
   FaChartLine,
+  FaFileLines,
 } from "react-icons/fa6";
 import { RiUserStarFill } from "react-icons/ri";
 import { TbReportAnalytics } from "react-icons/tb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import axios from "axios";
-import Link from "next/link";
 
 const loadUser = async (email) => {
   const { data } = await axios.get(`${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/users/${email}`);
@@ -112,7 +110,7 @@ const Sidebar = async () => {
         <Button
           url={"/auth/dashboard/reportes"}
           content="Reportes"
-          icono={<FaChartLine />}
+          icono={<FaFileLines />}
         />
 
         

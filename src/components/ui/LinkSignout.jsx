@@ -27,10 +27,10 @@ const LinkSignout = () => {
       }}
       className="flex flex-col items-center justify-center"
     >
-      <i className="text-2xl text-center">
+      <i className="text-2xl text-center hover:text-red-700">
         <IoLogOut />
       </i>
-      Cerrar Sesion
+      <p className="text-sm hover:text-red-700"> Cerrar Sesion </p>
     </Link>
   );
 };

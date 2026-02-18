@@ -19,6 +19,7 @@ export default function Layout({ children }) {
           <Image
             src={Logo}
             className="object-contain w-36 h-16" // Ajusta tamaño si es necesario
+            sizes="h-auto w-auto"
             alt="Logo Dashboard"
             priority
           />
