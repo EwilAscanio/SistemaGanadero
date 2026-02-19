@@ -11,14 +11,14 @@ export default function Layout({ children }) {
       {/* Define 2 filas: 10% para la fila superior (logo/nav), 1fr para la fila inferior (sidebar/contenido) */}
       {/* h-[100vh] asegura que el grid ocupe toda la altura de la ventana */}
       {/* overflow-hidden en el contenedor principal previene scrollbars no deseados en el layout general */}
-      <div className="grid grid-cols-[18%,1fr,1fr] grid-rows-[10%,1fr] h-[100vh] overflow-hidden bg-gray-100"> {/* Cambiado bg-white a bg-gray-100 para el fondo general */}
+      <div className="grid grid-cols-[14%,1fr,1fr] grid-rows-[10%,1fr] h-[100vh] overflow-hidden bg-gray-100"> {/* Cambiado bg-white a bg-gray-100 para el fondo general */}
 
         {/* Área del Logo (Celda: Columna 1, Fila 1) */}
         {/* Centrado vertical y horizontalmente */}
         <div className="flex items-center justify-center bg-white shadow-sm"> {/* Añadido fondo y sombra para la barra superior */}
           <Image
             src={Logo}
-            className="object-contain w-36 h-16" // Ajusta tamaño si es necesario
+            className="object-contain w-44 h-20" // Ajusta tamaño si es necesario
             sizes="h-auto w-auto"
             alt="Logo Dashboard"
             priority

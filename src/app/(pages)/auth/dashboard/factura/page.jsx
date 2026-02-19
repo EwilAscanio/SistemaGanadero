@@ -5,6 +5,9 @@ import { FaBarcode } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { pdf } from "@react-pdf/renderer";
+import { saveAs } from "file-saver";
+import FacturaPDF from "@/components/reportes/FacturaPDF";
 
 const Factura = () => {
   const router = useRouter();
@@ -40,17 +43,20 @@ const Factura = () => {
     obtenerNumeroFactura();
   }, []);
 
-  //Estados de carga de cliente cargado, animales, total y cliente
+//Estados de carga de cliente cargado, animales, total y cliente
   const [clienteCargado, setClienteCargado] = useState(false);
   const [animales, setAnimales] = useState([]);
   const [animal, setAnimal] = useState("");
   const [total, setTotal] = useState(0);
   const [cliente, setCliente] = useState("");
+  const [clienteData, setClienteData] = useState({});
+  const [imprimiendo, setImprimiendo] = useState(false);
 
-  //Funcion para buscar cliente
+//Funcion para buscar cliente
   const buscarCliente = async (codigo) => {
     if (!codigo) {
       setClienteCargado(false);
+      setClienteData({});
       return;
     }
 
@@ -60,6 +66,8 @@ const Factura = () => {
       );
       if (res.status === 200) {
         setClienteCargado(true);
+        setClienteData(res.data);
+        setCliente(res.data.nombre_cli);
 
         Swal.fire({
           title: "Éxito",
@@ -67,8 +75,6 @@ const Factura = () => {
           icon: "success",
           confirmButtonColor: "#3085d6",
         });
-
-        setCliente(res.data.nombre_cli);
       }
     } catch (error) {
       console.error(error);
@@ -79,6 +85,7 @@ const Factura = () => {
         confirmButtonColor: "#d33",
       });
       setClienteCargado(false);
+      setClienteData({});
     }
   };
 
@@ -89,6 +96,9 @@ const Factura = () => {
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/animal/${codigo}`
       );
+
+      console.log("Verificando la Respuesta del server",res.data); // Verificar la respuesta del servidor
+
       if (res.status === 200) {
         if (res.data.status_ani === "2") {
           Swal.fire({
@@ -97,7 +107,7 @@ const Factura = () => {
             icon: "warning",
             confirmButtonColor: "#d33",
           });
-          input.codigo_ani = "";
+          //input.codigo_ani = "";
           return;
         }
 
@@ -193,9 +203,72 @@ const Factura = () => {
     }
   });
 
-  // Función para imprimir la factura Falta Implementar
-  const imprimirFactura = () => {
-    window.print();
+// Función para imprimir la factura en PDF
+  const imprimirFactura = async () => {
+    if (!clienteCargado) {
+      Swal.fire({
+        title: "Advertencia",
+        text: "Debe buscar un cliente antes de imprimir la factura.",
+        icon: "warning",
+        confirmButtonColor: "#3085d6",
+      });
+      return;
+    }
+
+    if (animales.length === 0) {
+      Swal.fire({
+        title: "Advertencia",
+        text: "Debe agregar al menos un animal a la factura.",
+        icon: "warning",
+        confirmButtonColor: "#3085d6",
+      });
+      return;
+    }
+
+    setImprimiendo(true);
+
+    try {
+      const observaciones = getValues("observaciones_fac") || "";
+      
+      // Crear el documento PDF
+      const doc = (
+        <FacturaPDF
+          numeroFactura={numeroFac}
+          cliente={{
+            codigo_cli: clienteData.codigo_cli || getValues("codigo_cli"),
+            nombre: clienteData.nombre_cli || cliente,
+            rif_cli: clienteData.rif_cli || "",
+            telefono_cli: clienteData.telefono_cli || "",
+          }}
+          animales={animales}
+          total={total}
+          observaciones={observaciones}
+        />
+      );
+
+      // Generar el blob del PDF
+      const blob = await pdf(doc).toBlob();
+
+      // Descargar el archivo
+      saveAs(blob, `Factura_${numeroFac}.pdf`);
+
+      Swal.fire({
+        title: "Éxito",
+        text: "Factura generada correctamente.",
+        icon: "success",
+        confirmButtonColor: "#3085d6",
+      });
+    } catch (error) {
+      console.error("Error al generar el PDF:", error);
+      Swal.fire({
+        title: "Error",
+        text: "Ocurrió un error al generar la factura.",
+        icon: "error",
+        confirmButtonColor: "#d33",
+      });
+    } finally {
+      setImprimiendo(false);
+    }
   };
 
   return (
@@ -342,12 +415,13 @@ const Factura = () => {
             <h3 className="font-bold">Total: {total.toFixed(2)}$</h3>
           </div>
 
-          <button
+<button
             type="button"
-            className="w-full bg-green-500 text-white rounded-lg p-2"
+            className="w-full bg-green-500 text-white rounded-lg p-2 disabled:bg-green-300 disabled:cursor-not-allowed"
             onClick={imprimirFactura}
+            disabled={imprimiendo || !clienteCargado || animales.length === 0}
           >
-            Imprimir Factura
+            {imprimiendo ? "Generando PDF..." : "Imprimir Factura"}
           </button>
 
           <button

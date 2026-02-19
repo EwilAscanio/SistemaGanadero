@@ -39,7 +39,6 @@ export const POST = async (req) => {
   try {
     // 1. Obtener los datos del request
     const data = await req.json();
-    console.log("Datos recibidos:", data);
 
     // 2. Validación de campos requeridos básicos (opcional pero recomendado)
     if (
@@ -78,7 +77,7 @@ export const POST = async (req) => {
     // 4. Chequeo de campos y asignación de valores por defecto
     data.arete_ani = data.arete_ani || "Sin Arete"; // Si es "", null o undefined -> "Sin Arete"
     data.chip_ani = data.chip_ani === "" ? 0 : data.chip_ani;
-    data.precio_ani = data.precio_ani ?? 0; // Si es null o undefined -> 0
+    data.precio_ani = data.precio_ani ?? 1; // Si es null o undefined -> 0
     data.peso_ani = data.peso_ani ?? 0; // Si es null o undefined -> 0
     data.tiempoGestacion_ani =
     data.tiempoGestacion_ani === "" ? 0 : data.tiempoGestacion_ani; // Si es null o undefined -> null (o 0 si prefieres). Asume que puede ser texto o número.

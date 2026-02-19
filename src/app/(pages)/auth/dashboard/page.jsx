@@ -1,6 +1,6 @@
-"use client"; // Asegúrate de que este archivo se ejecute en el cliente
+"use client"; 
 import { useEffect, useState } from "react";
-import axios from "axios"; // Asegúrate de importar axios
+import axios from "axios"; 
 
 // Importa el ícono de carga
 import { LuLoader2 } from "react-icons/lu";
@@ -12,6 +12,7 @@ import { LuMilk } from "react-icons/lu";
 // Importa tus componentes
 import CardDashboard from "@/components/CardDashboard";
 import ChartComponent from "@/components/ChartComponent";
+import LecheChartComponent from "@/components/LecheChartComponent";
 
 const Page = () => {
   const [fechaVacunacion, setFechaVacunacion] = useState(null);
@@ -52,7 +53,7 @@ const Page = () => {
   // 3. Renderizado condicional: Mostrar carga si isLoadingInitialData es true
   if (isLoadingInitialData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="flex items-center justify-center h-full bg-gray-100 p-4">
         <div className="p-8 bg-white rounded-lg shadow-xl text-center max-w-md w-full">
           <LuLoader2 className="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4" />
           <p className="text-gray-700 text-lg font-semibold">
@@ -92,8 +93,13 @@ const Page = () => {
           bgColor="bg-yellow-500"
         />
       </div>
-      <div className="mt-4 p-4">
-        <ChartComponent />
+<div className="mt-4 flex flex-col gap-4">
+        <div className="p-4">
+          <ChartComponent />
+        </div>
+        <div className="p-4">
+          <LecheChartComponent />
+        </div>
       </div>
     </div>
   );
