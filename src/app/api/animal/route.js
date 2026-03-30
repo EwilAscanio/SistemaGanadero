@@ -7,7 +7,7 @@ export const GET = async () => {
 
     // Consulta para obtener el conteo total de animales
     const [countResult] = await conn.query(
-      "SELECT COUNT(*) AS cantidad FROM animal"
+      "SELECT COUNT(*) AS cantidad FROM animal order by codigo_ani"
     );
 
     // Verifica que countResult tenga resultados

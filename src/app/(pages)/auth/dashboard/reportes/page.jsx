@@ -16,7 +16,13 @@ const PageReports = () => {
   const [listadoFamilias, setListadoFamilias] = useState([]);
   const [loadingFamilias, setLoadingFamilias] = useState(true);
 
-  // Cargar la lista de familias al montar el componente
+  // Estado para el tercer reporte (Familias por Grupo)
+  const [grupoSeleccionado, setGrupoSeleccionado] = useState("Todos");
+  const [familiaPorGrupoSeleccionada, setFamiliaPorGrupoSeleccionada] = useState("Todos");
+  const [listadoFamiliasPorGrupo, setListadoFamiliasPorGrupo] = useState([]);
+  const [loadingFamiliasPorGrupo, setLoadingFamiliasPorGrupo] = useState(true);
+
+  // Cargar la lista de familias al montar el componente (para Reporte 2)
   useEffect(() => {
     const fetchFamilias = async () => {
       try {
@@ -34,6 +40,27 @@ const PageReports = () => {
     fetchFamilias();
   }, []);
 
+  // Cargar familias filtradas por grupo (para Reporte 3)
+  useEffect(() => {
+    const fetchFamiliasPorGrupo = async () => {
+      try {
+        setLoadingFamiliasPorGrupo(true);
+        const { data } = await axios.get(
+          `${process.env.NEXT_PUBLIC_NEXTAUTH_URL}/api/reportes/familiasporgrupo`,
+          { params: { grupo: grupoSeleccionado, familia: "Todos" } }
+        );
+        setListadoFamiliasPorGrupo(data.conteo || []);
+        setFamiliaPorGrupoSeleccionada("Todos");
+      } catch (err) {
+        console.error("Error cargando familias por grupo:", err);
+        setListadoFamiliasPorGrupo([]);
+      } finally {
+        setLoadingFamiliasPorGrupo(false);
+      }
+    };
+    fetchFamiliasPorGrupo();
+  }, [grupoSeleccionado]);
+
   const handleSubmitCategoriaAnimales = (e) => {
     e.preventDefault();
     router.push(`reportes/grupoanimal?categoria=${categoria}`);
@@ -42,6 +69,11 @@ const PageReports = () => {
   const handleSubmitFamiliaAnimales = (e) => {
     e.preventDefault();
     router.push(`reportes/familiaanimal?familia=${familiaSeleccionada}`);
+  };
+
+  const handleSubmitFamiliasPorGrupo = (e) => {
+    e.preventDefault();
+    router.push(`reportes/familiasporgrupo?grupo=${grupoSeleccionado}&familia=${familiaPorGrupoSeleccionada}`);
   };
 
   return (
@@ -162,6 +194,66 @@ const PageReports = () => {
                 <button
                   className="col-span-2 w-full bg-primary text-white py-2 rounded-lg hover:opacity-90 transition duration-300 flex items-center justify-center mt-6"
                   onClick={handleSubmitFamiliaAnimales}
+                >
+                  Mostrar Reporte
+                </button>
+              </div>
+
+              {/* Reporte Número 3 Familias por Grupo */}
+              <div className="relative border border-gray-300 rounded-lg p-4 md:col-span-2">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <p className="text-center text-gray-600 font-medium">
+                    Mostrar Familias por Grupo de Animal.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  {/* Selector de Grupo */}
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">
+                      Grupo:
+                    </label>
+                    <select
+                      value={grupoSeleccionado}
+                      onChange={(e) => setGrupoSeleccionado(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="Todos">Todos</option>
+                      <option value="Bufalinos">Bufalinos</option>
+                      <option value="Bobinos">Bobinos</option>
+                      <option value="Equinos">Equinos</option>
+                    </select>
+                  </div>
+
+                  {/* Selector de Familia (filtrado por grupo) */}
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">
+                      Familia:
+                    </label>
+                    {loadingFamiliasPorGrupo ? (
+                      <p className="text-center text-gray-400 text-xs animate-pulse py-2">
+                        Cargando familias...
+                      </p>
+                    ) : (
+                      <select
+                        value={familiaPorGrupoSeleccionada}
+                        onChange={(e) => setFamiliaPorGrupoSeleccionada(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="Todos">Todos</option>
+                        {listadoFamiliasPorGrupo.map((fam) => (
+                          <option key={fam.codigo_fam} value={fam.nombre_fam}>
+                            {fam.nombre_fam} ({fam.total})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  className="col-span-2 w-full bg-primary text-white py-2 rounded-lg hover:opacity-90 transition duration-300 flex items-center justify-center mt-6"
+                  onClick={handleSubmitFamiliasPorGrupo}
                 >
                   Mostrar Reporte
                 </button>

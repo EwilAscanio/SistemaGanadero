@@ -64,6 +64,10 @@ const ListAnimal = async () => {
                 Última Vacunación
               </th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-800 uppercase tracking-wider">
+                Fecha Palpacion
+              </th>
+
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-800 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
@@ -85,6 +89,14 @@ const ListAnimal = async () => {
                     <Syringe className="w-4 h-4 text-blue-500" />
                     {formatDate(animal.fechaVacunacion_ani)}
                   </div>
+                </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                  <div className="flex items-center justify-center gap-1">
+                    <Syringe className="w-4 h-4 text-blue-500" />
+                    {formatDate(animal.fechaPalpacion_ani) === '01/01/1900' ? 'No registrada' : formatDate(animal.fechaPalpacion_ani)}  
+                  </div>
+
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-center space-x-2">
                   <Link
