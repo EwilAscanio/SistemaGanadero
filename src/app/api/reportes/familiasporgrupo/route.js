@@ -1,17 +1,12 @@
 import { conn } from "@/libs/mariadb";
 import { NextResponse } from "next/server";
 
-/**
- * GET /api/reportes/familiasporgrupo?grupo=Todos|Bufalinos|Bobinos|Equinos&familia=Todos|<nombre_fam>
- * Devuelve las familias filtradas por grupo, con los animales que pertenecen a cada una.
- */
 export const GET = async (request) => {
   const { searchParams } = new URL(request.url);
   const grupo = searchParams.get("grupo") || "Todos";
   const familia = searchParams.get("familia") || "Todos";
 
   try {
-    // Consulta principal: animales con su familia y grupo
     let query = `
       SELECT
         f.codigo_fam,
@@ -47,11 +42,11 @@ export const GET = async (request) => {
       query += " WHERE " + conditions.join(" AND ");
     }
 
-    query += " ORDER BY f.name_fam ASC, a.nombre_ani ASC";
+    // CLAVE: Ordenamos por familia y luego por el código del animal
+    query += " ORDER BY f.name_fam ASC, a.codigo_ani ASC";
 
     const rows = await conn.query(query, params);
 
-    // Agrupar por familia
     const familiaMap = {};
     for (const row of rows) {
       const key = row.codigo_fam;
@@ -63,7 +58,7 @@ export const GET = async (request) => {
           animales: [],
         };
       }
-      // Solo agregar si el animal existe (LEFT JOIN puede traer null)
+      
       if (row.codigo_ani) {
         familiaMap[key].animales.push({
           codigo_ani: row.codigo_ani,
@@ -80,7 +75,7 @@ export const GET = async (request) => {
 
     const familias = Object.values(familiaMap);
 
-    // Conteo por familia (filtrado por grupo si aplica)
+    // Conteo por familia
     let conteoQuery = `
       SELECT
         f.codigo_fam,
@@ -106,7 +101,6 @@ export const GET = async (request) => {
     conteoQuery += " GROUP BY f.codigo_fam, f.name_fam ORDER BY f.name_fam ASC";
 
     const conteo = await conn.query(conteoQuery, conteoParams);
-
     const totalAnimales = familias.reduce((sum, f) => sum + f.animales.length, 0);
 
     return NextResponse.json(
@@ -116,7 +110,7 @@ export const GET = async (request) => {
   } catch (error) {
     console.error("Error en GET /api/reportes/familiasporgrupo:", error);
     return NextResponse.json(
-      { message: error.message || "Error al obtener el reporte de familias por grupo" },
+      { message: error.message || "Error al obtener el reporte" },
       { status: 500 }
     );
   }

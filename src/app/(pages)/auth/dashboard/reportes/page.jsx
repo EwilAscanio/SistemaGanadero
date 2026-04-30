@@ -61,16 +61,19 @@ const PageReports = () => {
     fetchFamiliasPorGrupo();
   }, [grupoSeleccionado]);
 
+  //Reporte Numero 1 - Animales por Grupo
   const handleSubmitCategoriaAnimales = (e) => {
     e.preventDefault();
     router.push(`reportes/grupoanimal?categoria=${categoria}`);
   };
 
+  //Reporte Numero 2 - Animales por Familias
   const handleSubmitFamiliaAnimales = (e) => {
     e.preventDefault();
     router.push(`reportes/familiaanimal?familia=${familiaSeleccionada}`);
   };
 
+  //Reporte Numero 3 - Animales por Grupo y Familias
   const handleSubmitFamiliasPorGrupo = (e) => {
     e.preventDefault();
     router.push(`reportes/familiasporgrupo?grupo=${grupoSeleccionado}&familia=${familiaPorGrupoSeleccionada}`);
